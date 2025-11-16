@@ -1,5 +1,5 @@
 // IMPORTANT: Replace this with your Google Apps Script Web App URL
-const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrLmgGq_jVC5WgZvDwn8jnHv7hDYVLOd80RAbmhuKhNtUErW7vXPAMAOHNAhCqEfth/exec';
 
 let selectedOfferCategory = '';
 
@@ -1054,3 +1054,46 @@ window.CookieManager = CookieManager;
 
     // note: input is focused when chat is opened via the toggle
 })();
+
+// Test function for Google Sheets integration
+// Call this from browser console: testGoogleSheets()
+window.testGoogleSheets = async function() {
+    console.log('🧪 Testing Google Sheets integration...');
+    console.log('Google Sheets URL:', GOOGLE_SCRIPT_URL);
+    
+    const testData = {
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleDateString('fr-FR'),
+        time: new Date().toLocaleTimeString('fr-FR'),
+        email: 'test@example.com',
+        name: 'Test User',
+        phone: '1234567890',
+        category: 'Test Category',
+        selectedPlan: 'Test Plan',
+        selectedPlanPrice: '100 DA',
+        planSelectedDate: new Date().toISOString(),
+        action: 'Test',
+        cookiesAccepted: true,
+        test: true,
+        message: 'This is a test entry to verify Google Sheets integration'
+    };
+    
+    console.log('📤 Sending test data:', testData);
+    
+    try {
+        const result = await CookieManager.sendToGoogleSheets(testData);
+        if (result) {
+            console.log('✅ Test successful! Check your Google Sheet for the test entry.');
+            console.log('💡 Look for a row with email: test@example.com and action: Test');
+        } else {
+            console.error('❌ Test failed. Check the error messages above.');
+        }
+        return result;
+    } catch (error) {
+        console.error('❌ Test error:', error);
+        return false;
+    }
+};
+
+// Make it accessible globally
+window.CookieManager = CookieManager;

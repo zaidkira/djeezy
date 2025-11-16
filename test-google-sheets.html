@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google Sheets Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #E30613;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #E30613;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #c00511;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #E30613;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Google Sheets Integration</h1>
+        
+        <p>This page will test if data can be saved to your Google Sheet.</p>
+        
+        <div>
+            <button id="testBtn" onclick="testConnection()">📤 Send Test Data to Google Sheet</button>
+            <button id="fullTestBtn" onclick="testFullData()">📊 Send Full Test Data</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+        
+        <div id="info" class="result info" style="display: block; margin-top: 30px;">
+            <h3>ℹ️ How to use:</h3>
+            <ol>
+                <li>Click "Send Test Data" button above</li>
+                <li>Wait for the response (check console with F12 for details)</li>
+                <li>If successful, check your Google Sheet for the new entry</li>
+                <li>Look for a row with email: <code>test@example.com</code></li>
+            </ol>
+            
+            <h3>📋 Google Sheets URL:</h3>
+            <pre id="urlDisplay">Loading...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script URL from script.js
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrLmgGq_jVC5WgZvDwn8jnHv7hDYVLOd80RAbmhuKhNtUErW7vXPAMAOHNAhCqEfth/exec';
+        
+        // Display the URL
+        document.getElementById('urlDisplay').textContent = GOOGLE_SCRIPT_URL || 'NOT CONFIGURED';
+        
+        // Simple test function
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Sending...';
+            result.style.display = 'none';
+            
+            const testData = {
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('fr-FR'),
+                time: new Date().toLocaleTimeString('fr-FR'),
+                email: 'test@example.com',
+                name: 'Test User',
+                phone: '1234567890',
+                category: 'Test Category',
+                selectedPlan: 'Test Plan',
+                selectedPlanPrice: '100 DA',
+                planSelectedDate: new Date().toISOString(),
+                action: 'Test Connection',
+                cookiesAccepted: true,
+                test: true,
+                message: 'This is a simple test to verify Google Sheets integration'
+            };
+            
+            console.log('🧪 Testing Google Sheets connection...');
+            console.log('📤 Sending test data:', testData);
+            
+            try {
+                // Try CORS mode first
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                if (response && response.ok) {
+                    const responseData = await response.text();
+                    console.log('✅ Success! Response:', responseData);
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>Data successfully sent to Google Sheets!</p>
+                        <p><strong>Next steps:</strong></p>
+                        <ol>
+                            <li>Open your Google Sheet</li>
+                            <li>Look for a new row with email: <code>test@example.com</code></li>
+                            <li>Check the action column for: <code>Test Connection</code></li>
+                        </ol>
+                        <p><small>Check browser console (F12) for more details.</small></p>
+                    `;
+                    result.style.display = 'block';
+                } else {
+                    throw new Error(`HTTP ${response?.status || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.warn('⚠️ CORS failed, trying no-cors mode...', error);
+                
+                // Fallback to no-cors mode
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(testData)
+                    });
+                    
+                    console.log('⚠️ Data sent with no-cors mode (response not verifiable)');
+                    result.className = 'result info';
+                    result.innerHTML = `
+                        <h3>⚠️ Data Sent (Response Not Verifiable)</h3>
+                        <p>Data was sent using no-cors mode. This means we can't verify the response, but it may have been successful.</p>
+                        <p><strong>Please check your Google Sheet:</strong></p>
+                        <ol>
+                            <li>Open your Google Sheet</li>
+                            <li>Look for a new row with email: <code>test@example.com</code></li>
+                            <li>If you see it, the connection is working! ✅</li>
+                            <li>If not, check the error below and your Apps Script setup</li>
+                        </ol>
+                        <p><small>Check browser console (F12) for more details.</small></p>
+                    `;
+                    result.style.display = 'block';
+                } catch (fallbackError) {
+                    console.error('❌ All attempts failed:', fallbackError);
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <h3>❌ Error Sending Data</h3>
+                        <p><strong>Error:</strong> ${fallbackError.message}</p>
+                        <p><strong>Possible issues:</strong></p>
+                        <ul>
+                            <li>Google Apps Script URL is incorrect</li>
+                            <li>Web App is not deployed or not accessible</li>
+                            <li>Web App permissions are incorrect (should be "Anyone")</li>
+                            <li>Network/CORS issues</li>
+                        </ul>
+                        <p><strong>Troubleshooting:</strong></p>
+                        <ol>
+                            <li>Check that GOOGLE_SCRIPT_URL is correct</li>
+                            <li>Verify your Google Apps Script is deployed as Web App</li>
+                            <li>Make sure "Who has access" is set to "Anyone"</li>
+                            <li>Check browser console (F12) for more details</li>
+                        </ol>
+                        <pre>${fallbackError.toString()}</pre>
+                    `;
+                    result.style.display = 'block';
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Send Test Data to Google Sheet';
+            }
+        }
+        
+        // Full test with comprehensive data
+        async function testFullData() {
+            const btn = document.getElementById('fullTestBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Sending...';
+            result.style.display = 'none';
+            
+            const fullTestData = {
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('fr-FR'),
+                time: new Date().toLocaleTimeString('fr-FR'),
+                email: 'full-test@example.com',
+                name: 'Full Test User',
+                phone: '1234567890',
+                category: 'Gamers - Internet Haute Vitesse',
+                selectedPlan: 'Forfait Gamer Pro',
+                selectedPlanPrice: '1800 DA',
+                planSelectedDate: new Date().toISOString(),
+                action: 'Full Test',
+                cookiesAccepted: true,
+                // Location
+                latitude: 36.7538,
+                longitude: 3.0588,
+                city: 'Algiers',
+                region: 'Algiers',
+                country: 'Algeria',
+                postalCode: '16000',
+                address: 'Algiers, Algeria',
+                ip: '192.168.1.1',
+                timezone: 'Africa/Algiers',
+                // Browser info
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                screenResolution: `${window.screen.width}x${window.screen.height}`,
+                referrer: document.referrer || 'Direct',
+                platform: navigator.platform,
+                // Behavior
+                clicksCount: 5,
+                scrollsCount: 3,
+                timeOnPageSeconds: 120,
+                sectionsViewedCount: 2,
+                keystrokeCount: 10,
+                // Predictions
+                interestScore: 75,
+                predictedIntent: 'High-speed Internet Interest',
+                engagementLevel: 'High',
+                // Test flag
+                test: true,
+                message: 'This is a full test with comprehensive data'
+            };
+            
+            console.log('🧪 Sending full test data...');
+            console.log('📤 Data:', fullTestData);
+            
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(fullTestData)
+                });
+                
+                if (response && response.ok) {
+                    const responseData = await response.text();
+                    console.log('✅ Full test success!', responseData);
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Full Test Successful!</h3>
+                        <p>Comprehensive test data successfully sent to Google Sheets!</p>
+                        <p><strong>Check your Google Sheet for:</strong></p>
+                        <ul>
+                            <li>Email: <code>full-test@example.com</code></li>
+                            <li>Action: <code>Full Test</code></li>
+                            <li>All 60+ data points should be populated</li>
+                        </ul>
+                    `;
+                    result.style.display = 'block';
+                } else {
+                    throw new Error(`HTTP ${response?.status || 'Unknown error'}`);
+                }
+            } catch (error) {
+                // Fallback to no-cors
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(fullTestData)
+                    });
+                    
+                    result.className = 'result info';
+                    result.innerHTML = `
+                        <h3>⚠️ Full Test Data Sent</h3>
+                        <p>Data was sent (response not verifiable). Check your Google Sheet for the entry.</p>
+                    `;
+                    result.style.display = 'block';
+                } catch (fallbackError) {
+                    result.className = 'result error';
+                    result.innerHTML = `<h3>❌ Error:</h3><p>${fallbackError.message}</p>`;
+                    result.style.display = 'block';
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📊 Send Full Test Data';
+            }
+        }
+    </script>
+</body>
+</html>
+
