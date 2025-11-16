@@ -8,22 +8,24 @@
     <style>
         /* Chat Toggle Button */
         .chat-toggle-btn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #e60000;
-            color: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-            border: none;
-            cursor: pointer;
-            z-index: 10001;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            position: fixed !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            width: 56px !important;
+            height: 56px !important;
+            border-radius: 50% !important;
+            background: #e60000 !important;
+            color: #fff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2) !important;
+            border: none !important;
+            cursor: pointer !important;
+            z-index: 10001 !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .chat-toggle-btn:active {
@@ -404,6 +406,11 @@
             const closeBtn = document.getElementById('chatCloseBtn');
 
             if (!widget || !toggle) return;
+
+            // Ensure toggle button is visible on page load
+            toggle.style.display = 'inline-flex';
+            toggle.style.visibility = 'visible';
+            toggle.style.opacity = '1';
 
             function openWidget() {
                 widget.classList.add('open');
