@@ -215,23 +215,22 @@ window.CookieManager = CookieManager;
     const chatInput = document.getElementById('chat-input');
     const sendButton = document.getElementById('send-button');
     const typingIndicator = document.querySelector('.typing-indicator');
-    // Support multiple toggles by class name. We attach individual listeners
-    // and also add a delegated listener for dynamically added elements.
-    const toggles = Array.from(document.querySelectorAll('.chat-toggle'));
+    const chatToggle = document.getElementById('chat-toggle');
 
-    // Ensure required elements exist; if not, no-op gracefully
-    if (!chatWidget || !chatMessages || !chatInput || !sendButton) return;
+    // Ensure toggle and widget exist; if not, no-op gracefully
+    if (!chatWidget || !chatMessages || !chatInput || !sendButton || !chatToggle) return;
 
     // Initial state: widget closed
     chatWidget.classList.add('chat-closed');
     chatWidget.setAttribute('aria-hidden', 'true');
+    chatToggle.setAttribute('aria-pressed', 'false');
 
-    function openChat(triggerEl) {
+    function openChat() {
         document.body.classList.add('chat-open');
         chatWidget.classList.remove('chat-closed');
         chatWidget.setAttribute('aria-hidden', 'false');
-        // mark the triggering control as pressed for accessibility
-        if (triggerEl) triggerEl.setAttribute('aria-pressed', 'true');
+        chatToggle.setAttribute('aria-pressed', 'true');
+        // focus input after short delay to allow animation/layout
         setTimeout(() => chatInput.focus(), 200);
     }
 
@@ -239,28 +238,13 @@ window.CookieManager = CookieManager;
         document.body.classList.remove('chat-open');
         chatWidget.classList.add('chat-closed');
         chatWidget.setAttribute('aria-hidden', 'true');
-        // clear aria-pressed on any toggles
-        document.querySelectorAll('.chat-toggle').forEach(el => el.setAttribute('aria-pressed', 'false'));
+        chatToggle.setAttribute('aria-pressed', 'false');
     }
 
-    function toggleChat(triggerEl) {
+    // Toggle on button click
+    chatToggle.addEventListener('click', function() {
         const isOpen = document.body.classList.contains('chat-open');
-        if (isOpen) closeChat(); else openChat(triggerEl);
-    }
-
-    // Attach click listeners to any existing toggles
-    toggles.forEach(btn => {
-        try { btn.setAttribute('aria-pressed', 'false'); } catch (e) {}
-        btn.addEventListener('click', (e) => { e.preventDefault(); toggleChat(btn); });
-    });
-
-    // Delegated listener: handle clicks on elements with class 'chat-toggle' added later
-    document.addEventListener('click', function(e) {
-        const el = e.target.closest && e.target.closest('.chat-toggle');
-        if (el) {
-            e.preventDefault();
-            toggleChat(el);
-        }
+        if (isOpen) closeChat(); else openChat();
     });
 
     // Close chat when pressing Escape
