@@ -81,6 +81,21 @@
         #chat-input { flex:1; padding:8px 10px; border-radius:6px; border:1px solid #ddd; }
         #send-button { background:#e60000; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
         @media (max-width:420px){ .chat-widget{ right:12px; left:12px; width:auto; bottom:80px; } .chat-toggle-btn{ right:12px; bottom:12px; } }
+        /* Show pill when chat is hidden permanently */
+        .chat-show-pill {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            z-index: 10002;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -311,7 +326,10 @@
         <span class="chat-badge" aria-hidden="true"></span>
     </button>
     <div id="chat-widget" class="chat-widget" role="complementary" aria-hidden="true">
-        <div id="chat-header">💬 Djeezy Support <button id="chatCloseBtn" class="chat-close-btn" aria-label="Fermer le chat">✕</button></div>
+        <div id="chat-header">💬 Djeezy Support
+            <button id="chatHideBtn" class="chat-hide-btn" aria-label="Cacher le chat" title="Cacher le chat" style="background:transparent;border:none;color:#fff;margin-left:8px;cursor:pointer;font-size:13px;">Masquer</button>
+            <button id="chatCloseBtn" class="chat-close-btn" aria-label="Fermer le chat">✕</button>
+        </div>
         <div id="chat-messages">
             <div class="message bot">
                 <div class="message-content">
@@ -332,6 +350,9 @@
         </div>
     </div>
 
+    <!-- Small pill to restore the chat when user hid it permanently -->
+    <button id="chatShowPill" class="chat-show-pill" aria-hidden="true" title="Afficher le chat">Afficher le chat</button>
+
     <!-- Chat widget behavior: toggle button opens the panel above the button -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -339,15 +360,22 @@
             const toggle = document.getElementById('chatToggleBtn');
             const input = document.getElementById('chat-input');
             const closeBtn = document.getElementById('chatCloseBtn');
+            const hideBtn = document.getElementById('chatHideBtn');
+            const showPill = document.getElementById('chatShowPill');
 
             if (!widget || !toggle) return;
 
             function openWidget() {
+                // If the chat was hidden permanently, do nothing
+                if (localStorage.getItem('djeezy_chat_hidden') === 'true') return;
+
                 widget.classList.add('open');
                 widget.setAttribute('aria-hidden', 'false');
                 toggle.setAttribute('aria-expanded', 'true');
                 // hide the floating toggle while chat is open
                 toggle.style.display = 'none';
+                // hide the show pill (in case it was visible)
+                if (showPill) showPill.style.display = 'none';
                 // focus the input slightly after opening for smooth animation
                 setTimeout(()=>{ input && input.focus(); }, 200);
             }
@@ -356,9 +384,13 @@
                 widget.classList.remove('open');
                 widget.setAttribute('aria-hidden', 'true');
                 toggle.setAttribute('aria-expanded', 'false');
-                // restore the floating toggle so user can re-open
-                toggle.style.display = '';
-                toggle.focus();
+                // restore the floating toggle so user can re-open (unless hidden permanently)
+                if (localStorage.getItem('djeezy_chat_hidden') === 'true') {
+                    if (toggle) toggle.style.display = 'none';
+                } else {
+                    if (toggle) toggle.style.display = '';
+                }
+                toggle && toggle.focus();
             }
 
             toggle.addEventListener('click', function (e) {
@@ -367,6 +399,25 @@
 
             // Close button inside chat header
             if (closeBtn) closeBtn.addEventListener('click', function (e) { closeWidget(); });
+
+            // Hide permanently (toggle + widget) and show the small pill
+            if (hideBtn) hideBtn.addEventListener('click', function (e) {
+                localStorage.setItem('djeezy_chat_hidden', 'true');
+                // hide toggle and widget
+                if (toggle) toggle.style.display = 'none';
+                widget.classList.remove('open');
+                widget.setAttribute('aria-hidden', 'true');
+                if (showPill) showPill.style.display = 'block';
+            });
+
+            // Restore from the pill
+            if (showPill) showPill.addEventListener('click', function (e) {
+                localStorage.removeItem('djeezy_chat_hidden');
+                if (toggle) toggle.style.display = '';
+                showPill.style.display = 'none';
+                // give the toggle focus so users can open the chat again
+                toggle && toggle.focus();
+            });
 
             // Close when clicking outside (but make sure toggle clicks don't trigger close)
             document.addEventListener('click', function (e) {
@@ -379,6 +430,17 @@
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && widget.classList.contains('open')) closeWidget();
             });
+
+            // Initialize hidden state on load: show pill if chat was hidden permanently
+            if (localStorage.getItem('djeezy_chat_hidden') === 'true') {
+                // hide toggle and widget; show pill
+                if (toggle) toggle.style.display = 'none';
+                widget.classList.remove('open');
+                widget.setAttribute('aria-hidden', 'true');
+                if (showPill) showPill.style.display = 'block';
+            } else {
+                if (showPill) showPill.style.display = 'none';
+            }
         });
     </script>
 
