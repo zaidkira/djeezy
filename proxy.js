@@ -91,9 +91,9 @@ app.all('/api/chat', async (req, res) => {
   }
 });
 
-// Fallback to djezzy-website-replica.html for SPA routing or direct access
+// Fallback to index.html for SPA routing or direct access
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'djezzy-website-replica.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Global error handler
