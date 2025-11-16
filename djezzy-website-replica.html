@@ -408,15 +408,18 @@
             if (!widget || !toggle) return;
 
             // Ensure toggle button is visible on page load
-            toggle.style.display = 'inline-flex';
-            toggle.style.visibility = 'visible';
-            toggle.style.opacity = '1';
+            toggle.style.setProperty('display', 'inline-flex', 'important');
+            toggle.style.setProperty('visibility', 'visible', 'important');
+            toggle.style.setProperty('opacity', '1', 'important');
 
             function openWidget() {
                 widget.classList.add('open');
                 widget.setAttribute('aria-hidden', 'false');
                 toggle.setAttribute('aria-expanded', 'true');
-                toggle.style.display = 'none';
+                // Hide the toggle button when chat opens
+                toggle.style.setProperty('display', 'none', 'important');
+                toggle.style.setProperty('visibility', 'hidden', 'important');
+                toggle.style.setProperty('opacity', '0', 'important');
                 setTimeout(() => {
                     if (input) input.focus();
                 }, 200);
@@ -426,7 +429,10 @@
                 widget.classList.remove('open');
                 widget.setAttribute('aria-hidden', 'true');
                 toggle.setAttribute('aria-expanded', 'false');
-                toggle.style.display = 'inline-flex';
+                // Show the toggle button when chat closes
+                toggle.style.setProperty('display', 'inline-flex', 'important');
+                toggle.style.setProperty('visibility', 'visible', 'important');
+                toggle.style.setProperty('opacity', '1', 'important');
                 toggle.focus();
             }
 
