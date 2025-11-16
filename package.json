@@ -1,0 +1,14 @@
+{
+  "name": "djezzy-chat-proxy",
+  "version": "1.0.0",
+  "description": "Proxy to forward chat widget requests to n8n webhook",
+  "main": "proxy.js",
+  "scripts": {
+    "start": "node proxy.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  }
+}
