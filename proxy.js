@@ -37,14 +37,42 @@ app.use(express.static(path.join(__dirname)));
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// Proxy endpoint: forward POST body to n8n webhook and return response
-app.post('/api/chat', async (req, res) => {
+// Proxy endpoint: forward requests to n8n webhook and return response
+// Accept all methods (GET/POST/PUT...) so we can detect if the frontend/browser used GET by mistake.
+app.all('/api/chat', async (req, res) => {
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
-    });
+    // Log incoming request for debugging
+    console.log(`Incoming ${req.method} ${req.originalUrl} - query: ${JSON.stringify(req.query)}`);
+    if (Object.keys(req.body || {}).length) console.log('Incoming body:', req.body);
+
+    // Build fetch options using the incoming method. Only include a body for methods that commonly carry one.
+    const method = req.method || 'POST';
+    const fetchOptions = { method };
+
+    // Forward Content-Type header if present, otherwise default to application/json
+    const incomingContentType = req.get('content-type');
+    fetchOptions.headers = { 'Content-Type': incomingContentType || 'application/json' };
+
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+      // If body is already parsed (JSON), re-stringify. If no body, send empty JSON object.
+      try {
+        fetchOptions.body = JSON.stringify(req.body && Object.keys(req.body).length ? req.body : {});
+      } catch (e) {
+        fetchOptions.body = '{}';
+      }
+    }
+
+    // If the webhook URL needs query string forwarding, append original query string
+    const url = new URL(N8N_WEBHOOK_URL);
+    const originalQs = req.originalUrl.split('?')[1];
+    if (originalQs) {
+      // append incoming query string to the webhook URL
+      url.search = url.search ? `${url.search}&${originalQs}` : `?${originalQs}`;
+    }
+
+    console.log(`Forwarding ${method} -> ${url.toString()}`);
+
+    const response = await fetch(url.toString(), fetchOptions);
 
     const contentType = response.headers.get('content-type') || 'text/plain';
     res.status(response.status);
