@@ -497,7 +497,7 @@ footer {
     display: none;
 }
 
-/* Analytics Dashboard (hidden by default) */
+/* Analytics Dashboard (hidden from users) */
 .analytics-indicator {
     position: fixed;
     top: 100px;
@@ -507,12 +507,17 @@ footer {
     border-radius: 10px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.2);
     z-index: 9999;
-    display: none;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
     max-width: 300px;
+    pointer-events: none !important;
 }
 
 .analytics-indicator.show {
-    display: block;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 .analytics-indicator h4 {
