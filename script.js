@@ -216,10 +216,12 @@ window.CookieManager = CookieManager;
     const chatInput = document.getElementById('chat-input');
     const sendButton = document.getElementById('send-button');
     const typingIndicator = document.querySelector('.typing-indicator');
-    const chatToggle = document.getElementById('chat-toggle');
+    // Support both possible toggle IDs: legacy `chat-toggle` and new `chatToggleBtn`.
+    const chatToggle = document.getElementById('chatToggleBtn') || document.getElementById('chat-toggle') || null;
 
-    // Ensure toggle and widget exist; if not, no-op gracefully
-    if (!chatWidget || !chatMessages || !chatInput || !sendButton || !chatToggle) return;
+    // Require only the elements necessary for sending/receiving messages.
+    // The toggle is optional because the page may manage open/close separately.
+    if (!chatWidget || !chatMessages || !chatInput || !sendButton) return;
 
     // Initial state: widget closed
     chatWidget.classList.add('chat-closed');
