@@ -56,7 +56,7 @@
             width: 340px;
             max-width: calc(100% - 40px);
             max-height: 72vh;
-            display: flex;
+            display: none; /* Hidden by default */
             flex-direction: column;
             background: #fff;
             border-radius: 12px;
@@ -70,6 +70,7 @@
             z-index: 10000;
         }
         .chat-widget.open {
+            display: flex; /* Show when open */
             opacity: 1;
             transform: translateY(0) scale(1);
             pointer-events: auto;
@@ -361,7 +362,7 @@
                 widget.classList.add('open');
                 widget.setAttribute('aria-hidden', 'false');
                 toggle.setAttribute('aria-expanded', 'true');
-                // hide the floating toggle while chat is open
+                // Hide the toggle button when chat opens
                 toggle.style.display = 'none';
                 // focus the input slightly after opening for smooth animation
                 setTimeout(()=>{ input && input.focus(); }, 200);
@@ -371,23 +372,29 @@
                 widget.classList.remove('open');
                 widget.setAttribute('aria-hidden', 'true');
                 toggle.setAttribute('aria-expanded', 'false');
-                // restore the floating toggle so user can re-open
-                toggle.style.display = '';
+                // Show the toggle button when chat closes
+                toggle.style.display = 'inline-flex';
                 toggle.focus();
             }
 
+            // Toggle widget on button click - opens the chat (toggle is hidden when chat is open)
             toggle.addEventListener('click', function (e) {
+                e.stopPropagation(); // Prevent event from bubbling
                 openWidget();
             });
 
             // Close button inside chat header
-            if (closeBtn) closeBtn.addEventListener('click', function (e) { closeWidget(); });
+            if (closeBtn) closeBtn.addEventListener('click', function (e) { 
+                e.stopPropagation(); // Prevent event from bubbling
+                closeWidget(); 
+            });
 
-            // Close when clicking outside (but make sure toggle clicks don't trigger close)
+            // Close when clicking outside (but make sure widget clicks don't trigger close)
             document.addEventListener('click', function (e) {
                 if (!widget.classList.contains('open')) return;
-                if (e.target === toggle) return;
-                if (!widget.contains(e.target)) closeWidget();
+                // Don't close if clicking on the widget itself
+                if (widget.contains(e.target)) return;
+                closeWidget();
             });
 
             // Close on ESC
