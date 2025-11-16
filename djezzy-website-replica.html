@@ -32,6 +32,12 @@
             transform: scale(0.98);
         }
 
+        .chat-toggle-btn.hidden {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
         .chat-toggle-btn svg {
             width: 28px;
             height: 28px;
@@ -407,19 +413,11 @@
 
             if (!widget || !toggle) return;
 
-            // Ensure toggle button is visible on page load
-            toggle.style.setProperty('display', 'inline-flex', 'important');
-            toggle.style.setProperty('visibility', 'visible', 'important');
-            toggle.style.setProperty('opacity', '1', 'important');
-
             function openWidget() {
                 widget.classList.add('open');
                 widget.setAttribute('aria-hidden', 'false');
                 toggle.setAttribute('aria-expanded', 'true');
-                // Hide the toggle button when chat opens
-                toggle.style.setProperty('display', 'none', 'important');
-                toggle.style.setProperty('visibility', 'hidden', 'important');
-                toggle.style.setProperty('opacity', '0', 'important');
+                toggle.classList.add('hidden');
                 setTimeout(() => {
                     if (input) input.focus();
                 }, 200);
@@ -429,10 +427,7 @@
                 widget.classList.remove('open');
                 widget.setAttribute('aria-hidden', 'true');
                 toggle.setAttribute('aria-expanded', 'false');
-                // Show the toggle button when chat closes
-                toggle.style.setProperty('display', 'inline-flex', 'important');
-                toggle.style.setProperty('visibility', 'visible', 'important');
-                toggle.style.setProperty('opacity', '1', 'important');
+                toggle.classList.remove('hidden');
                 toggle.focus();
             }
 
