@@ -26,6 +26,27 @@
             transition: transform .18s ease, box-shadow .18s ease;
         }
         .chat-toggle-btn:active { transform: scale(.98); }
+        /* SVG icon inside the button */
+        .chat-toggle-btn svg { width: 28px; height: 28px; display: block; }
+        /* small badge (unread/attention) */
+        .chat-toggle-btn .chat-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffeb3b;
+            box-shadow: 0 0 0 rgba(255, 235, 59, 0.8);
+            transform-origin: center;
+            animation: pulse 2000ms infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: .7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
         /* Chat panel that appears above the button */
         .chat-widget {
@@ -281,7 +302,14 @@
     </footer>
 
     <!-- Chat widget injected by assistant -->
-    <button id="chatToggleBtn" class="chat-toggle-btn" aria-controls="chat-widget" aria-expanded="false" title="Ouvrir le chat">💬</button>
+    <button id="chatToggleBtn" class="chat-toggle-btn" aria-controls="chat-widget" aria-expanded="false" aria-label="Ouvrir le chat" title="Ouvrir le chat">
+        <!-- Chat bubble SVG (keeps visuals crisp) -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" fill="#FFFFFF" opacity="0.98"/>
+            <path d="M7 9h10M7 12h6" stroke="#E60000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="chat-badge" aria-hidden="true"></span>
+    </button>
     <div id="chat-widget" class="chat-widget" role="complementary" aria-hidden="true">
         <div id="chat-header">💬 Djeezy Support <button id="chatCloseBtn" class="chat-close-btn" aria-label="Fermer le chat">✕</button></div>
         <div id="chat-messages">
