@@ -30,8 +30,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Serve static files if you keep the site in a public/ folder (optional)
-// app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from project root so the server can serve the frontend
+// (index.html, styles.css, script.js) as well as handle the proxy endpoint.
+app.use(express.static(path.join(__dirname)));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -60,6 +61,11 @@ app.post('/api/chat', async (req, res) => {
     console.error('Error forwarding to n8n webhook:', err);
     return res.status(500).json({ error: 'Failed to forward request to webhook' });
   }
+});
+
+// Fallback to index.html for SPA routing or direct access
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Global error handler
