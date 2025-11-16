@@ -205,11 +205,12 @@ window.CookieManager = CookieManager;
 // Chat widget script (appended)
 // ------------------------------
 (function() {
-    // Use the proxy endpoint by default so the browser talks to the same origin.
+    // Try proxy endpoint first, fall back to direct n8n webhook if proxy not available
     // The proxy will forward requests to the n8n webhook defined by the
     // environment variable `N8N_WEBHOOK_URL` on the server. This avoids CORS.
-    // To bypass the proxy and call the webhook directly, replace with the full URL.
-    const CHAT_WEBHOOK_URL = '/api/chat';
+    const PROXY_URL = '/api/chat';
+    const N8N_WEBHOOK_URL = 'https://zaidkira.app.n8n.cloud/webhook/5424fadd-2d53-48da-9d58-efa2c910e2b1/chat';
+    let useDirectWebhook = false; // Will be set to true if proxy returns 404
 
     const chatWidget = document.getElementById('chat-widget');
     const chatMessages = document.getElementById('chat-messages');
@@ -299,9 +300,10 @@ window.CookieManager = CookieManager;
         chatInput.value = '';
         setTyping(true);
 
-        // First attempt: normal fetch (allows reading JSON response if CORS permits)
+        // First attempt: try proxy, or direct webhook if proxy unavailable
         try {
-            const response = await fetch(CHAT_WEBHOOK_URL, {
+            const url = useDirectWebhook ? N8N_WEBHOOK_URL : PROXY_URL;
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'sendMessage', sessionId: sessionId, chatInput: message })
@@ -319,6 +321,30 @@ window.CookieManager = CookieManager;
                 return;
             }
 
+            // If proxy returns 404, switch to direct webhook for next time
+            if (response && response.status === 404 && !useDirectWebhook) {
+                console.warn('Proxy endpoint not found (404), switching to direct webhook');
+                useDirectWebhook = true;
+                // Retry with direct webhook immediately
+                try {
+                    const directResponse = await fetch(N8N_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'sendMessage', sessionId: sessionId, chatInput: message })
+                    });
+                    if (directResponse && directResponse.ok) {
+                        let data = null;
+                        try { data = await directResponse.json(); } catch (e) { }
+                        setTyping(false);
+                        if (data && data.output) addMessage(data.output, false);
+                        else addMessage('✅ Message envoyé — réponse indisponible.', false);
+                        return;
+                    }
+                } catch (e) {
+                    // Will fall through to no-cors fallback
+                }
+            }
+
             // Non-OK status (e.g., 4xx/5xx). Throw to trigger fallback handling below.
             throw new Error('Network response was not ok: ' + (response ? response.status : 'no response'));
 
@@ -328,7 +354,8 @@ window.CookieManager = CookieManager;
             // Fallback: try sending with no-cors mode. Response will be opaque and unreadable,
             // but the request may still reach the server (useful when server doesn't send CORS headers).
             try {
-                await fetch(CHAT_WEBHOOK_URL, {
+                const url = useDirectWebhook ? N8N_WEBHOOK_URL : PROXY_URL;
+                await fetch(url, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
