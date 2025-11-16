@@ -224,7 +224,7 @@
     </footer>
 
     <!-- Chat widget -->
-    <div id="chat-widget" style="display:none">
+    <div id="chat-widget" class="chat-closed" aria-hidden="true">
         <div id="chat-header">💬 Djeezy Support</div>
         <div id="chat-messages">
             <div class="message bot">
@@ -246,16 +246,9 @@
         </div>
     </div>
 
+    <!-- Floating chat toggle button -->
+    <button id="chat-toggle" class="chat-toggle" aria-label="Open chat" title="Chat with Djeezy">💬</button>
+
     <script src="script.js" defer></script>
-    <script>
-        // Show the chat widget after page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const widget = document.getElementById('chat-widget');
-            if (widget) {
-                widget.style.display = 'flex';
-                widget.style.flexDirection = 'column';
-            }
-        });
-    </script>
 </body>
 </html>
