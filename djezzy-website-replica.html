@@ -5,6 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Djezzy - Leader du Digital en Algérie</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Floating chat toggle button */
+        .chat-toggle-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #e60000;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            border: none;
+            cursor: pointer;
+            z-index: 10001;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .chat-toggle-btn:active { transform: scale(.98); }
+
+        /* Chat panel that appears above the button */
+        .chat-widget {
+            position: fixed;
+            right: 20px;
+            bottom: 88px; /* sits above the button */
+            width: 340px;
+            max-width: calc(100% - 40px);
+            max-height: 72vh;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            overflow: hidden;
+            transform-origin: bottom right;
+            opacity: 0;
+            transform: translateY(12px) scale(.98);
+            pointer-events: none;
+            transition: opacity .18s ease, transform .18s ease;
+            z-index: 10000;
+        }
+        .chat-widget.open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        #chat-header { padding: 12px 16px; background: #ff0033; color: #fff; font-weight: 600; position:relative; }
+        .chat-close-btn { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 16px; line-height: 1; cursor: pointer; padding: 4px; }
+        #chat-messages { padding: 12px; overflow: auto; flex: 1 1 auto; }
+        #chat-input-container { display: flex; gap:8px; padding: 12px; border-top: 1px solid #eee; }
+        #chat-input { flex:1; padding:8px 10px; border-radius:6px; border:1px solid #ddd; }
+        #send-button { background:#e60000; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
+        @media (max-width:420px){ .chat-widget{ right:12px; left:12px; width:auto; bottom:80px; } .chat-toggle-btn{ right:12px; bottom:12px; } }
+    </style>
 </head>
 <body>
     <!-- Cookie Consent Banner -->
@@ -223,40 +279,80 @@
             <p style="margin-top: 10px; font-size: 12px; color: #666;">Note: Ceci est une réplique éducative du site Djezzy</p>
         </div>
     </footer>
-</body>
-</html>
 
-<!-- Chat widget injected by assistant -->
-<div id="chat-widget" style="display:none">
-    <div id="chat-header">💬 Djeezy Support</div>
-    <div id="chat-messages">
-        <div class="message bot">
-            <div class="message-content">
-                مرحبا! 👋 كيف يمكنني مساعدتك اليوم؟<br>
-                Bonjour! Comment puis-je vous aider?<br>
-                Hello! How can I assist you today?
+    <!-- Chat widget injected by assistant -->
+    <button id="chatToggleBtn" class="chat-toggle-btn" aria-controls="chat-widget" aria-expanded="false" title="Ouvrir le chat">💬</button>
+    <div id="chat-widget" class="chat-widget" role="complementary" aria-hidden="true">
+        <div id="chat-header">💬 Djeezy Support <button id="chatCloseBtn" class="chat-close-btn" aria-label="Fermer le chat">✕</button></div>
+        <div id="chat-messages">
+            <div class="message bot">
+                <div class="message-content">
+                    مرحبا! 👋 كيف يمكنني مساعدتك اليوم؟<br>
+                    Bonjour! Comment puis-je vous aider?<br>
+                    Hello! How can I assist you today?
+                </div>
+            </div>
+            <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
-        <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="اكتب رسالتك... Type your message..." />
+            <button id="send-button">Send</button>
         </div>
     </div>
-    <div id="chat-input-container">
-        <input type="text" id="chat-input" placeholder="اكتب رسالتك... Type your message..." />
-        <button id="send-button">Send</button>
-    </div>
-</div>
 
-<!-- Chat widget styles and script are loaded from existing assets -->
-<script>
-    // Show the chat widget after page load (small delay so it doesn't flash)
-    document.addEventListener('DOMContentLoaded', function() {
-        const widget = document.getElementById('chat-widget');
-        if (widget) {
-            widget.style.display = 'flex';
-            widget.style.flexDirection = 'column';
-        }
-    });
-</script>
+    <!-- Chat widget behavior: toggle button opens the panel above the button -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const widget = document.getElementById('chat-widget');
+            const toggle = document.getElementById('chatToggleBtn');
+            const input = document.getElementById('chat-input');
+            const closeBtn = document.getElementById('chatCloseBtn');
+
+            if (!widget || !toggle) return;
+
+            function openWidget() {
+                widget.classList.add('open');
+                widget.setAttribute('aria-hidden', 'false');
+                toggle.setAttribute('aria-expanded', 'true');
+                // hide the floating toggle while chat is open
+                toggle.style.display = 'none';
+                // focus the input slightly after opening for smooth animation
+                setTimeout(()=>{ input && input.focus(); }, 200);
+            }
+
+            function closeWidget() {
+                widget.classList.remove('open');
+                widget.setAttribute('aria-hidden', 'true');
+                toggle.setAttribute('aria-expanded', 'false');
+                // restore the floating toggle so user can re-open
+                toggle.style.display = '';
+                toggle.focus();
+            }
+
+            toggle.addEventListener('click', function (e) {
+                openWidget();
+            });
+
+            // Close button inside chat header
+            if (closeBtn) closeBtn.addEventListener('click', function (e) { closeWidget(); });
+
+            // Close when clicking outside (but make sure toggle clicks don't trigger close)
+            document.addEventListener('click', function (e) {
+                if (!widget.classList.contains('open')) return;
+                if (e.target === toggle) return;
+                if (!widget.contains(e.target)) closeWidget();
+            });
+
+            // Close on ESC
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && widget.classList.contains('open')) closeWidget();
+            });
+        });
+    </script>
+
+</body>
+</html>
