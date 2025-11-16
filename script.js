@@ -210,45 +210,12 @@ window.CookieManager = CookieManager;
     // to '/api/chat' and deploy the Node proxy.
     const CHAT_WEBHOOK_URL = 'https://zaidkira.app.n8n.cloud/webhook/djeezy-chat';
 
-    const chatWidget = document.getElementById('chat-widget');
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
     const sendButton = document.getElementById('send-button');
     const typingIndicator = document.querySelector('.typing-indicator');
-    const chatToggle = document.getElementById('chat-toggle');
 
-    // Ensure toggle and widget exist; if not, no-op gracefully
-    if (!chatWidget || !chatMessages || !chatInput || !sendButton || !chatToggle) return;
-
-    // Initial state: widget closed
-    chatWidget.classList.add('chat-closed');
-    chatWidget.setAttribute('aria-hidden', 'true');
-    chatToggle.setAttribute('aria-pressed', 'false');
-
-    function openChat() {
-        document.body.classList.add('chat-open');
-        chatWidget.classList.remove('chat-closed');
-        chatWidget.setAttribute('aria-hidden', 'false');
-        chatToggle.setAttribute('aria-pressed', 'true');
-        // focus input after short delay to allow animation/layout
-        setTimeout(() => chatInput.focus(), 200);
-    }
-
-    function closeChat() {
-        document.body.classList.remove('chat-open');
-        chatWidget.classList.add('chat-closed');
-        chatWidget.setAttribute('aria-hidden', 'true');
-        chatToggle.setAttribute('aria-pressed', 'false');
-    }
-
-    // Toggle on button click
-    chatToggle.addEventListener('click', function() {
-        const isOpen = document.body.classList.contains('chat-open');
-        if (isOpen) closeChat(); else openChat();
-    });
-
-    // Close chat when pressing Escape
-    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeChat(); });
+    if (!chatMessages || !chatInput || !sendButton) return;
 
     // Generate unique session ID for this user
     let sessionId = localStorage.getItem('djeezy_session_id');
@@ -351,5 +318,6 @@ window.CookieManager = CookieManager;
     sendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(); });
 
-    // note: input is focused when chat is opened via the toggle
+    // make sure input is focused when widget opens
+    chatInput.focus();
 })();
