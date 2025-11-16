@@ -205,10 +205,10 @@ window.CookieManager = CookieManager;
 // Chat widget script (appended)
 // ------------------------------
 (function() {
-    // Use local proxy endpoint for chat forwarding. When proxy is deployed, the frontend
-    // posts to `/api/chat` and the proxy forwards to the n8n webhook server-side.
-    // To send directly to n8n (not recommended due to CORS), replace with the full webhook URL.
-    const CHAT_WEBHOOK_URL = '/api/chat';
+    // Use the direct n8n webhook URL. Make sure the workflow is active in n8n
+    // If you prefer a server-side proxy (recommended for CORS/security), change this
+    // to '/api/chat' and deploy the Node proxy.
+    const CHAT_WEBHOOK_URL = 'https://zaidkira.app.n8n.cloud/webhook/djeezy-chat';
 
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
