@@ -209,7 +209,7 @@ window.CookieManager = CookieManager;
     // The proxy will forward requests to the n8n webhook defined by the
     // environment variable `N8N_WEBHOOK_URL` on the server. This avoids CORS.
     const PROXY_URL = '/api/chat';
-    const N8N_WEBHOOK_URL = 'https://zaidkira.app.n8n.cloud/webhook/5424fadd-2d53-48da-9d58-efa2c910e2b1/chat';
+    const N8N_WEBHOOK_URL = 'https://zaidkira.app.n8n.cloud/webhook/djeezy-chat';
     let useDirectWebhook = false; // Will be set to true if proxy returns 404
 
     const chatWidget = document.getElementById('chat-widget');

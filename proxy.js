@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Replace this with your actual n8n webhook URL or set process.env.N8N_WEBHOOK_URL
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'https://zaidkira.app.n8n.cloud/webhook/5424fadd-2d53-48da-9d58-efa2c910e2b1/chat';
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'https://zaidkira.app.n8n.cloud/webhook/djeezy-chat';
 
 // Allowed origin for CORS. For testing you can use '*', for production set a specific origin.
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
