@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Djezzy - Leader du Digital en Algérie</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <h3>🍪 Nous utilisons des cookies</h3>
+                <p>Nous utilisons des cookies pour améliorer votre expérience et comprendre vos préférences. En acceptant, vous nous aidez à vous proposer des offres personnalisées.</p>
+            </div>
+            <div class="email-form">
+                <input type="email" class="email-input" id="userEmail" placeholder="Entrez votre email pour des offres personnalisées (optionnel)">
+            </div>
+            <div class="cookie-buttons">
+                <button class="cookie-btn cookie-accept" onclick="acceptCookies()">Accepter & Continuer</button>
+                <button class="cookie-btn cookie-decline" onclick="declineCookies()">Refuser</button>
+            </div>
+            <p class="error-message" id="emailError">Veuillez entrer une adresse email valide</p>
+            <div class="success-message" id="successMessage">✓ Merci ! Vos préférences ont été enregistrées.</div>
+        </div>
+    </div>
+
+    <!-- Email Collection Modal (for offer clicks) -->
+    <div class="email-modal" id="emailModal">
+        <div class="email-modal-content">
+            <h3>📧 Recevez cette offre par email</h3>
+            <p>Nous aimerions vous envoyer plus d'informations sur cette offre. Veuillez entrer votre email.</p>
+            <input type="text" id="modalName" placeholder="Votre nom (optionnel)">
+            <input type="email" id="modalEmail" placeholder="Votre email *" required>
+            <input type="tel" id="modalPhone" placeholder="Numéro de téléphone (optionnel)">
+            <p class="error-message" id="modalError">Veuillez entrer une adresse email valide</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-submit" onclick="submitOfferInterest()">Envoyer</button>
+                <button class="modal-btn modal-skip" onclick="closeEmailModal()">Passer</button>
+            </div>
+            <div class="success-message" id="modalSuccess">✓ Merci ! Nous vous contacterons bientôt.</div>
+        </div>
+    </div>
+
+    <!-- Analytics Indicator (for demo purposes) -->
+    <div class="analytics-indicator" id="analyticsIndicator">
+        <h4>📊 Données Collectées</h4>
+        <p id="cookieStatus">Status: En attente</p>
+        <p id="userCategory">Catégorie: Non définie</p>
+        <p id="visitTime">Temps de visite: 0s</p>
+        <p id="lastInteraction">Dernière interaction: Aucune</p>
+    </div>
+
+    <script src="script.js" defer></script>
+    <!-- Header -->
+    <header>
+        <div class="top-bar">
+            <div class="container">
+                <div>📞 Service Client: 777 | 🌐 Espace Client</div>
+                <div class="top-links">
+                    <a href="#entreprises">Entreprises</a>
+                    <a href="#boutique">Boutique en ligne</a>
+                </div>
+            </div>
+        </div>
+        <nav>
+            <div class="logo">djezzy</div>
+            <ul class="nav-links">
+                <li><a href="#mobile">Mobile</a></li>
+                <li><a href="#internet">Internet</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#recharge">Recharge</a></li>
+                <li><a href="#boutiques">Boutiques</a></li>
+            </ul>
+            <a href="#espace" class="btn-primary">Espace Client</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Leader du Digital en Algérie</h1>
+        <p>Découvrez nos offres mobiles et internet pour rester connecté partout, tout le temps</p>
+        <div class="hero-buttons">
+            <a href="#offers" class="btn-secondary">Nos Offres</a>
+            <a href="#recharge" class="btn-secondary">Recharger</a>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <h2>Nos Services</h2>
+        <div class="service-grid">
+            <div class="service-card">
+                <div class="service-icon">📱</div>
+                <h3>Mobile Prépayé</h3>
+                <p>Profitez de nos forfaits prépayés flexibles adaptés à vos besoins</p>
+                <a href="#" class="btn-primary">Découvrir</a>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">📞</div>
+                <h3>Mobile Postpayé</h3>
+                <p>Des abonnements avec engagement pour plus d'avantages</p>
+                <a href="#" class="btn-primary">Découvrir</a>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">🌐</div>
+                <h3>Internet 4G</h3>
+                <p>Naviguez à grande vitesse avec notre réseau 4G</p>
+                <a href="#" class="btn-primary">Découvrir</a>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">💳</div>
+                <h3>Recharge Facile</h3>
+                <p>Rechargez votre compte en quelques clics</p>
+                <a href="#" class="btn-primary">Recharger</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Offers Section -->
+    <section class="offers" id="offers">
+        <div class="offers-container">
+            <h2>Nos Offres du Moment</h2>
+            <div class="offer-grid">
+                <div class="offer-card">
+                    <div class="offer-header" style="background: #8B00FF;">
+                        <div class="offer-price">1800 DA</div>
+                        <div class="offer-period">/mois</div>
+                    </div>
+                    <div class="offer-body">
+                        <h3>🎮 Forfait Gamer Pro</h3>
+                        <ul class="offer-features">
+                            <li>50 GB Internet Haute Vitesse</li>
+                            <li>Ping ultra-bas optimisé jeux</li>
+                            <li>Streaming HD illimité</li>
+                            <li>100 min d'appels</li>
+                            <li>Priorité réseau 4G+</li>
+                        </ul>
+                        <a href="#" class="btn-primary" style="display: block; text-align: center;">Souscrire</a>
+                    </div>
+                </div>
+                <div class="offer-card">
+                    <div class="offer-header">
+                        <div class="offer-price">800 DA</div>
+                        <div class="offer-period">/mois</div>
+                    </div>
+                    <div class="offer-body">
+                        <h3>📱 Forfait Équilibré</h3>
+                        <ul class="offer-features">
+                            <li>10 GB Internet</li>
+                            <li>200 min d'appels</li>
+                            <li>500 SMS</li>
+                            <li>WhatsApp & Facebook illimités</li>
+                            <li>Idéal usage quotidien</li>
+                        </ul>
+                        <a href="#" class="btn-primary" style="display: block; text-align: center;">Souscrire</a>
+                    </div>
+                </div>
+                <div class="offer-card">
+                    <div class="offer-header" style="background: #228B22;">
+                        <div class="offer-price">400 DA</div>
+                        <div class="offer-period">/mois</div>
+                    </div>
+                    <div class="offer-body">
+                        <h3>☎️ Forfait Appels Illimités</h3>
+                        <ul class="offer-features">
+                            <li>Appels illimités Djezzy</li>
+                            <li>500 min vers autres réseaux</li>
+                            <li>SMS illimités</li>
+                            <li>1 GB Internet bonus</li>
+                            <li>Parfait pour rester en contact</li>
+                        </ul>
+                        <a href="#" class="btn-primary" style="display: block; text-align: center;">Souscrire</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>À propos</h3>
+                <ul>
+                    <li><a href="#qui">Qui sommes-nous</a></li>
+                    <li><a href="#presse">Espace Presse</a></li>
+                    <li><a href="#carriere">Carrière</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Services</h3>
+                <ul>
+                    <li><a href="#mobile">Mobile</a></li>
+                    <li><a href="#internet">Internet</a></li>
+                    <li><a href="#recharge">Recharge</a></li>
+                    <li><a href="#entreprise">Solutions Entreprise</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Aide & Support</h3>
+                <ul>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="#guide">Guides d'utilisation</a></li>
+                    <li><a href="#couverture">Carte de couverture</a></li>
+                    <li><a href="#reclamation">Réclamations</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Suivez-nous</h3>
+                <ul>
+                    <li><a href="#fb">📘 Facebook</a></li>
+                    <li><a href="#twitter">🐦 Twitter</a></li>
+                    <li><a href="#insta">📷 Instagram</a></li>
+                    <li><a href="#youtube">📺 YouTube</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Djezzy. Tous droits réservés. | Conditions d'utilisation | Politique de confidentialité</p>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">Note: Ceci est une réplique éducative du site Djezzy</p>
+        </div>
+    </footer>
+</body>
+</html>
+
+<!-- Chat widget injected by assistant -->
+<div id="chat-widget" style="display:none">
+    <div id="chat-header">💬 Djeezy Support</div>
+    <div id="chat-messages">
+        <div class="message bot">
+            <div class="message-content">
+                مرحبا! 👋 كيف يمكنني مساعدتك اليوم؟<br>
+                Bonjour! Comment puis-je vous aider?<br>
+                Hello! How can I assist you today?
+            </div>
+        </div>
+        <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    <div id="chat-input-container">
+        <input type="text" id="chat-input" placeholder="اكتب رسالتك... Type your message..." />
+        <button id="send-button">Send</button>
+    </div>
+</div>
+
+<!-- Chat widget styles and script are loaded from existing assets -->
+<script>
+    // Show the chat widget after page load (small delay so it doesn't flash)
+    document.addEventListener('DOMContentLoaded', function() {
+        const widget = document.getElementById('chat-widget');
+        if (widget) {
+            widget.style.display = 'flex';
+            widget.style.flexDirection = 'column';
+        }
+    });
+</script>
