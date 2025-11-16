@@ -5,6 +5,156 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Djezzy - Leader du Digital en Algérie</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Chat Toggle Button */
+        .chat-toggle-btn {
+            position: fixed !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            width: 56px !important;
+            height: 56px !important;
+            border-radius: 50% !important;
+            background: #e60000 !important;
+            color: #fff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2) !important;
+            border: none !important;
+            cursor: pointer !important;
+            z-index: 10001 !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .chat-toggle-btn:active {
+            transform: scale(0.98);
+        }
+
+        .chat-toggle-btn.hidden {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .chat-toggle-btn svg {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
+
+        .chat-toggle-btn .chat-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffeb3b;
+            box-shadow: 0 0 0 rgba(255, 235, 59, 0.8);
+            transform-origin: center;
+            animation: pulse 2000ms infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Chat Widget Panel */
+        .chat-widget {
+            position: fixed;
+            right: 20px;
+            bottom: 88px;
+            width: 340px;
+            max-width: calc(100% - 40px);
+            max-height: 72vh;
+            display: none;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            overflow: hidden;
+            transform-origin: bottom right;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 10000;
+        }
+
+        .chat-widget.open {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        #chat-header {
+            padding: 12px 16px;
+            background: #ff0033;
+            color: #fff;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .chat-close-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        #chat-messages {
+            padding: 12px;
+            overflow: auto;
+            flex: 1 1 auto;
+        }
+
+        #chat-input-container {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        #send-button {
+            background: #e60000;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 420px) {
+            .chat-widget {
+                right: 12px;
+                left: 12px;
+                width: auto;
+                bottom: 80px;
+            }
+            .chat-toggle-btn {
+                right: 12px;
+                bottom: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Cookie Consent Banner -->
@@ -223,9 +373,16 @@
         </div>
     </footer>
 
-    <!-- Chat widget -->
-    <div id="chat-widget" class="chat-closed" aria-hidden="true">
-        <div id="chat-header">💬 Djeezy Support</div>
+    <!-- Chat Widget -->
+    <button id="chatToggleBtn" class="chat-toggle-btn" aria-controls="chat-widget" aria-expanded="false" aria-label="Ouvrir le chat" title="Ouvrir le chat">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" fill="#FFFFFF" opacity="0.98"/>
+            <path d="M7 9h10M7 12h6" stroke="#E60000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="chat-badge" aria-hidden="true"></span>
+    </button>
+    <div id="chat-widget" class="chat-widget" role="complementary" aria-hidden="true">
+        <div id="chat-header">💬 Djeezy Support <button id="chatCloseBtn" class="chat-close-btn" aria-label="Fermer le chat">✕</button></div>
         <div id="chat-messages">
             <div class="message bot">
                 <div class="message-content">
@@ -246,8 +403,59 @@
         </div>
     </div>
 
-    <!-- Floating chat toggle button -->
-    <button id="chat-toggle" class="chat-toggle" aria-label="Open chat" title="Chat with Djeezy">💬</button>
+    <!-- Chat Widget JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const widget = document.getElementById('chat-widget');
+            const toggle = document.getElementById('chatToggleBtn');
+            const input = document.getElementById('chat-input');
+            const closeBtn = document.getElementById('chatCloseBtn');
+
+            if (!widget || !toggle) return;
+
+            function openWidget() {
+                widget.classList.add('open');
+                widget.setAttribute('aria-hidden', 'false');
+                toggle.setAttribute('aria-expanded', 'true');
+                toggle.classList.add('hidden');
+                setTimeout(() => {
+                    if (input) input.focus();
+                }, 200);
+            }
+
+            function closeWidget() {
+                widget.classList.remove('open');
+                widget.setAttribute('aria-hidden', 'true');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.classList.remove('hidden');
+                toggle.focus();
+            }
+
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                openWidget();
+            });
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    closeWidget();
+                });
+            }
+
+            document.addEventListener('click', function (e) {
+                if (!widget.classList.contains('open')) return;
+                if (widget.contains(e.target)) return;
+                closeWidget();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && widget.classList.contains('open')) {
+                    closeWidget();
+                }
+            });
+        });
+    </script>
 
     <script src="script.js" defer></script>
 </body>
