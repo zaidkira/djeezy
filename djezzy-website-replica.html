@@ -6,7 +6,7 @@
     <title>Djezzy - Leader du Digital en Algérie</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Floating chat toggle button */
+        /* Chat Toggle Button */
         .chat-toggle-btn {
             position: fixed;
             right: 20px;
@@ -16,19 +16,26 @@
             border-radius: 50%;
             background: #e60000;
             color: #fff;
-            display: inline-flex; /* Visible by default */
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 6px 18px rgba(0,0,0,0.2);
             border: none;
             cursor: pointer;
             z-index: 10001;
-            transition: transform .18s ease, box-shadow .18s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
-        .chat-toggle-btn:active { transform: scale(.98); }
-        /* SVG icon inside the button */
-        .chat-toggle-btn svg { width: 28px; height: 28px; display: block; }
-        /* small badge (unread/attention) */
+
+        .chat-toggle-btn:active {
+            transform: scale(0.98);
+        }
+
+        .chat-toggle-btn svg {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
+
         .chat-toggle-btn .chat-badge {
             position: absolute;
             top: 6px;
@@ -44,19 +51,19 @@
 
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: .7; }
+            50% { transform: scale(1.4); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Chat panel that appears above the button */
+        /* Chat Widget Panel */
         .chat-widget {
             position: fixed;
             right: 20px;
-            bottom: 88px; /* sits above the button */
+            bottom: 88px;
             width: 340px;
             max-width: calc(100% - 40px);
             max-height: 72vh;
-            display: none; /* Hidden by default */
+            display: none;
             flex-direction: column;
             background: #fff;
             border-radius: 12px;
@@ -64,38 +71,79 @@
             overflow: hidden;
             transform-origin: bottom right;
             opacity: 0;
-            transform: translateY(12px) scale(.98);
+            transform: translateY(12px) scale(0.98);
             pointer-events: none;
-            transition: opacity .18s ease, transform .18s ease;
+            transition: opacity 0.18s ease, transform 0.18s ease;
             z-index: 10000;
         }
         .chat-widget.open {
-            display: flex; /* Show when open */
+            display: flex;
             opacity: 1;
             transform: translateY(0) scale(1);
             pointer-events: auto;
         }
-        #chat-header { padding: 12px 16px; background: #ff0033; color: #fff; font-weight: 600; position:relative; }
-        .chat-close-btn { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 16px; line-height: 1; cursor: pointer; padding: 4px; }
-        #chat-messages { padding: 12px; overflow: auto; flex: 1 1 auto; }
-        #chat-input-container { display: flex; gap:8px; padding: 12px; border-top: 1px solid #eee; }
-        #chat-input { flex:1; padding:8px 10px; border-radius:6px; border:1px solid #ddd; }
-        #send-button { background:#e60000; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
-        @media (max-width:420px){ .chat-widget{ right:12px; left:12px; width:auto; bottom:80px; } .chat-toggle-btn{ right:12px; bottom:12px; } }
-        /* Show pill when chat is hidden permanently */
-        .chat-show-pill {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            background: rgba(0,0,0,0.7);
+
+        #chat-header {
+            padding: 12px 16px;
+            background: #ff0033;
             color: #fff;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 13px;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .chat-close-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            line-height: 1;
             cursor: pointer;
-            z-index: 10002;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-            display: none;
+            padding: 4px;
+        }
+
+        #chat-messages {
+            padding: 12px;
+            overflow: auto;
+            flex: 1 1 auto;
+        }
+
+        #chat-input-container {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        #send-button {
+            background: #e60000;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 420px) {
+            .chat-widget {
+                right: 12px;
+                left: 12px;
+                width: auto;
+                bottom: 80px;
+            }
+            .chat-toggle-btn {
+                right: 12px;
+                bottom: 12px;
+            }
         }
     </style>
 </head>
@@ -317,9 +365,8 @@
         </div>
     </footer>
 
-    <!-- Chat widget injected by assistant -->
+    <!-- Chat Widget -->
     <button id="chatToggleBtn" class="chat-toggle-btn" aria-controls="chat-widget" aria-expanded="false" aria-label="Ouvrir le chat" title="Ouvrir le chat">
-        <!-- Chat bubble SVG (keeps visuals crisp) -->
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
             <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" fill="#FFFFFF" opacity="0.98"/>
             <path d="M7 9h10M7 12h6" stroke="#E60000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -348,7 +395,7 @@
         </div>
     </div>
 
-    <!-- Chat widget behavior: toggle button opens the panel above the button -->
+    <!-- Chat Widget JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const widget = document.getElementById('chat-widget');
@@ -362,44 +409,42 @@
                 widget.classList.add('open');
                 widget.setAttribute('aria-hidden', 'false');
                 toggle.setAttribute('aria-expanded', 'true');
-                // Hide the toggle button when chat opens
                 toggle.style.display = 'none';
-                // focus the input slightly after opening for smooth animation
-                setTimeout(()=>{ input && input.focus(); }, 200);
+                setTimeout(() => {
+                    if (input) input.focus();
+                }, 200);
             }
 
             function closeWidget() {
                 widget.classList.remove('open');
                 widget.setAttribute('aria-hidden', 'true');
                 toggle.setAttribute('aria-expanded', 'false');
-                // Show the toggle button when chat closes
                 toggle.style.display = 'inline-flex';
                 toggle.focus();
             }
 
-            // Toggle widget on button click - opens the chat (toggle is hidden when chat is open)
             toggle.addEventListener('click', function (e) {
-                e.stopPropagation(); // Prevent event from bubbling
+                e.stopPropagation();
                 openWidget();
             });
 
-            // Close button inside chat header
-            if (closeBtn) closeBtn.addEventListener('click', function (e) { 
-                e.stopPropagation(); // Prevent event from bubbling
-                closeWidget(); 
-            });
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    closeWidget();
+                });
+            }
 
-            // Close when clicking outside (but make sure widget clicks don't trigger close)
             document.addEventListener('click', function (e) {
                 if (!widget.classList.contains('open')) return;
-                // Don't close if clicking on the widget itself
                 if (widget.contains(e.target)) return;
                 closeWidget();
             });
 
-            // Close on ESC
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && widget.classList.contains('open')) closeWidget();
+                if (e.key === 'Escape' && widget.classList.contains('open')) {
+                    closeWidget();
+                }
             });
         });
     </script>
